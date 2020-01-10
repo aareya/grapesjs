@@ -1,9 +1,4 @@
 /********* Input style **********/
-$inputFontColor: $mainLhlColor; /* #d5d5d5 */
-$arrowColor: $mainLhlColor; /* b1b1b1 */
-$darkTextShadow: $mainDkColor; /* #252525 */
-$darkBorder: rgba(0, 0, 0, 0.15); /* 303030 */
-$colorpSize: 22px;
 
 @mixin rangeThumbStyle() {
   height: 10px;
@@ -16,50 +11,96 @@ $colorpSize: 22px;
 
 @mixin rangeTrackStyle() {
   background-color: $mainDkColor;
-  border: 1px solid $darkBorder;
   border-radius: 1px;
-  height: 2px;
+  margin-top: 3px;
+  height: 3px;
 }
 
-.#{$app-prefix}label {
-  line-height: 18px;
+.#{$app-prefix} {
+  &label {
+    line-height: 18px;
+  }
+
+  &fields {
+    display: flex;
+  }
+
+  &select {
+    padding: 0;
+    width: 100%;
+
+    select {
+      padding-right: 10px;
+    }
+  }
+
+  &select:-moz-focusring,
+  &select select:-moz-focusring {
+    color: transparent;
+    text-shadow: 0 0 0 $mainLhlColor;
+  }
+
+  &input:focus,
+  &button:focus,
+  &btn-prim:focus,
+  &select:focus,
+  &select select:focus {
+    outline: none;
+  }
+
+  &field {
+    input,
+    select,
+    textarea {
+      @include appearance(none);
+
+      color: inherit;
+      border: none;
+      background-color: transparent;
+      box-sizing: border-box;
+      width: 100%;
+      position: relative;
+      padding: $inputPadding;
+      z-index: 1;
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    &-range {
+      flex: 9 1 auto;
+    }
+
+    &-integer {
+      input {
+        padding-right: 30px;
+      }
+    }
+  }
+}
+
+.#{$app-prefix}select option,
+.#{$app-prefix}field-select option,
+.#{$clm-prefix}select option,
+.#{$sm-prefix}select option,
+.#{$app-prefix}fields option,
+.#{$sm-prefix}unit option {
+  background-color: $mainColor;
+  color: $fontColor;
 }
 
 .#{$app-prefix}field {
-  background-color: $mainDkColor;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 1px 1px 0 $mainLhColor;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: none;
+  box-shadow: none;
   border-radius: 2px;
   box-sizing: border-box;
   padding: 0;
   position: relative;
 
-  input,
-  select,
-  textarea {
-    @include appearance(none);
-
-    color: $inputFontColor;
-    border: none;
-    background-color: transparent;
-    box-sizing: border-box;
-    width: 100%;
-    position: relative;
-    padding: 3px 4px 4px;
-    z-index: 1;
-  }
-
   textarea {
     resize: vertical;
-  }
-
-  select {
-    height: 20px;
-    padding-right: 12px;
-  }
-
-  option {
-    padding: 3px 0;
   }
 
   .#{$app-prefix}sel-arrow {
@@ -72,7 +113,10 @@ $colorpSize: 22px;
   }
 
   .#{$app-prefix}d-s-arrow {
-    bottom: 7px;
+    bottom: 0;
+    top: 0;
+    margin: auto;
+    right: $inputPadding;
     border-top: 4px solid $arrowColor;
     position: absolute;
     height: 0;
@@ -80,6 +124,23 @@ $colorpSize: 22px;
     border-left: 3px solid transparent;
     border-right: 4px solid transparent;
     cursor: pointer;
+  }
+
+  &-arrows {
+    position: absolute;
+    cursor: ns-resize;
+    margin: auto;
+    height: 20px;
+    width: 9px;
+    z-index: 10;
+    bottom: 0;
+    right: $inputPadding - 2px;
+    top: 0;
+  }
+
+  &-color,
+  &-radio {
+    width: 100%;
   }
 }
 
@@ -127,17 +188,13 @@ $colorpSize: 22px;
   top: 0;
 }
 
-.#{$app-prefix}field-radio {
-  float: left;
-  overflow: hidden;
-  padding: 0;
-  width: auto;
-}
-
 /* ??? */
 .#{$app-prefix}field-checkbox {
   padding: 0;
-  width: auto !important;
+  width: 17px;
+  height: 17px;
+  display: block;
+  cursor: pointer;
 
   input {
     display: none;
@@ -151,7 +208,8 @@ $colorpSize: 22px;
 }
 
 .#{$app-prefix}radio-item {
-  float: left;
+  flex: 1 1 auto;
+  text-align: center;
   border-left: 1px solid $darkTextShadow;
 
   &:first-child {
@@ -169,22 +227,24 @@ $colorpSize: 22px;
   input:checked + .#{$app-prefix}radio-item-label {
     background-color: rgba(255, 255, 255, 0.2);
   }
+
+  &s {
+    display: flex;
+  }
 }
 
 .#{$app-prefix}radio-item-label {
   cursor: pointer;
   display: block;
-  padding: 5px;
+  padding: $inputPadding;
 }
 
 .#{$app-prefix}field-units {
   position: absolute;
-  right: 0;
+  margin: auto;
+  right: 10px;
+  bottom: 0;
   top: 0;
-
-  select {
-    padding: 0 12px 0 0;
-  }
 }
 
 .#{$app-prefix}field-unit {
@@ -194,16 +254,6 @@ $colorpSize: 22px;
   font-size: 10px;
   color: $arrowColor;
   cursor: pointer;
-}
-
-.#{$app-prefix}field-arrows {
-  z-index: 10;
-  cursor: ns-resize;
-  height: 100%;
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 9px;
 }
 
 .#{$app-prefix}field-arrow-u,
@@ -226,10 +276,6 @@ $colorpSize: 22px;
 
 .#{$app-prefix}field-select {
   padding: 0;
-
-  option {
-    @extend .#{$app-prefix}bg-main;
-  }
 }
 
 .#{$app-prefix}field-range {
@@ -240,33 +286,59 @@ $colorpSize: 22px;
 
   input {
     margin: 0;
+    height: 100%;
+
+    &:focus {
+      outline: none;
+    }
+
+    &::-webkit-slider-thumb {
+     -webkit-appearance: none;
+     margin-top: -4px;
+
+     @include rangeThumbStyle();
+    }
+
+    &::-moz-range-thumb {
+     @include rangeThumbStyle();
+    }
+
+    &::-ms-thumb {
+     @include rangeThumbStyle();
+    }
+
+    /* -moz-range-progress */
+    &::-moz-range-track {
+     @include rangeTrackStyle();
+    }
+
+    &::-webkit-slider-runnable-track {
+     @include rangeTrackStyle();
+    }
+
+    &::-ms-track {
+     @include rangeTrackStyle();
+    }
+  }
+}
+
+.#{$app-prefix}btn {
+  &-prim {
+    color: inherit;
+    background-color: $mainLhColor;
+    border-radius: 2px;
+    padding: 3px 6px;
+    padding: $inputPadding;
+    cursor: pointer;
+    border: none;
+
+    &:active {
+      background-color: $mainLhColor;
+    }
   }
 
-  input::-moz-range-thumb {
-    @include rangeThumbStyle();
-  }
-
-  input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    margin-top: -5px;
-
-    @include rangeThumbStyle();
-  }
-
-  input::-ms-thumb {
-    @include rangeThumbStyle();
-  }
-
-  input::-moz-range-track {
-    @include rangeTrackStyle();
-  }
-
-  input::-webkit-slider-runnable-track {
-    @include rangeTrackStyle();
-  }
-
-  input::-ms-track {
-    @include rangeTrackStyle();
+  &--full {
+    width: 100%;
   }
 }
 
@@ -278,7 +350,6 @@ $colorpSize: 22px;
   height: 14px;
   margin: 0 5px;
   width: 6px;
-  cursor: pointer;
 }
 
 .#{$app-prefix}add-trasp {

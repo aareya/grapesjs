@@ -1,19 +1,23 @@
-var Backbone = require('backbone');
+import Backbone from 'backbone';
 
-module.exports = Backbone.Model.extend({
+export default Backbone.Model.extend({
+  build(model, opts = {}) {
+    const models = model.get('components');
 
-  /** @inheritdoc */
-  build(model, cssc) {
-    var coll = model.get('components') || model,
-      code = '';
-
-    coll.each(m => {
-      code += m.toHTML({
-        cssc
+    if (opts.exportWrapper) {
+      return model.toHTML({
+        ...(opts.wrapperIsBody && { tag: 'body' })
       });
-    }, this);
+    }
 
-    return code;
+    return this.buildModels(models);
   },
 
+  buildModels(models) {
+    let code = '';
+    models.each(model => {
+      code += model.toHTML();
+    });
+    return code;
+  }
 });

@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   // Prefix identifier that will be used inside storing and loading
   id: 'gjs-',
 
@@ -16,24 +16,27 @@ module.exports = {
   stepsBeforeSave: 1,
 
   //Enable/Disable components model (JSON format)
-  storeComponents: false,
+  storeComponents: 1,
 
   //Enable/Disable styles model (JSON format)
-  storeStyles: false,
+  storeStyles: 1,
 
   //Enable/Disable saving HTML template
-  storeHtml: true,
+  storeHtml: 1,
 
-  //Enable/Disable saving HTML template
-  storeCss: true,
+  //Enable/Disable saving CSS template
+  storeCss: 1,
 
   // ONLY FOR LOCAL STORAGE
   // If enabled, checks if browser supports Local Storage
-  checkLocal: true,
+  checkLocal: 1,
 
   // ONLY FOR REMOTE STORAGE
-  // Custom params that should be passed with each store/load request
+  // Custom parameters to pass with the remote storage request, eg. csrf token
   params: {},
+
+  // Custom headers for the remote storage request
+  headers: {},
 
   // Endpoint where to save all stuff
   urlStore: '',
@@ -50,6 +53,15 @@ module.exports = {
   // set contentType paramater of $.ajax
   // true: application/json; charset=utf-8'
   // false: 'x-www-form-urlencoded'
-  contentTypeJson: false
+  contentTypeJson: true,
 
+  credentials: 'include',
+
+  // Pass custom options to fetch API (remote storage)
+  // You can pass a simple object: { someOption: 'someValue' }
+  // or a function wich returns and object to add:
+  // currentOpts => {
+  //  return currentOpts.method === 'post' ?  { method: 'patch' } : {};
+  // }
+  fetchOptions: ''
 };

@@ -1,99 +1,126 @@
 /**
- *
- * * [getConfig](#getconfig)
- * * [getHtml](#gethtml)
- * * [getCss](#getcss)
- * * [getJs](#getjs)
- * * [getComponents](#getcomponents)
- * * [setComponents](#setcomponents)
- * * [addComponents](#addcomponents)
- * * [getStyle](#getstyle)
- * * [setStyle](#setstyle)
- * * [getSelected](#getselected)
- * * [setDevice](#setdevice)
- * * [getDevice](#getdevice)
- * * [runCommand](#runcommand)
- * * [stopCommand](#stopcommand)
- * * [store](#store)
- * * [load](#load)
- * * [getContainer](#getcontainer)
- * * [refresh](#refresh)
- * * [on](#on)
- * * [off](#off)
- * * [trigger](#trigger)
- * * [render](#render)
- *
- * Editor class contains the top level API which you'll probably use to custom the editor or extend it with plugins.
- * You get the Editor instance on init method
+ * Editor contains the top level API which you'll probably use to customize the editor or extend it with plugins.
+ * You get the Editor instance on init method and you can pass options via its [Configuration Object](https://github.com/artf/grapesjs/blob/master/src/editor/config/config.js)
  *
  * ```js
- * var editor = grapesjs.init({...});
+ * const editor = grapesjs.init({
+ *    // options
+ * });
  * ```
  *
- * **Available events**
- * component:add - Triggered when a new component is added to the editor, the model is passed as an argument to the callback
- * component:update - Triggered when a component is, generally, updated (moved, styled, etc.)
- * component:update:{propertyName} - Listen any property change
- * component:styleUpdate - Triggered when the style of the component is updated
- * component:styleUpdate:{propertyName} - Listen for a specific style property change
- * styleManager:change - Triggered on style property change from new selected component, the view of the property is passed as an argument to the callback
- * styleManager:change:{propertyName} - As above but for a specific style property
- * storage:load - Triggered when something was loaded from the storage, loaded object passed as an argumnet
- * storage:store - Triggered when something is stored to the storage, stored object passed as an argumnet
- * canvasScroll - Triggered when the canvas is scrolled
- * run:{commandName} - Triggered when some command is called to run (eg. editor.runCommand('preview'))
- * stop:{commandName} - Triggered when some command is called to stop (eg. editor.stopCommand('preview'))
- * load - When the editor is loaded
+ * ## Available Events
+ *
+ * You can make use of available events in this way
+ * ```js
+ * editor.on('EVENT-NAME', (some, argument) => {
+ *    // do something
+ * })
+ * ```
+ *
+ * ### Components
+ * * `component:create` - Component is created (only the model, is not yet mounted in the canvas), called after the init() method
+ * * `component:mount` - Component is mounted to an element and rendered in canvas
+ * * `component:add` - Triggered when a new component is added to the editor, the model is passed as an argument to the callback
+ * * `component:remove` - Triggered when a component is removed, the model is passed as an argument to the callback
+ * * `component:clone` - Triggered when a component is cloned, the new model is passed as an argument to the callback
+ * * `component:update` - Triggered when a component is updated (moved, styled, etc.), the model is passed as an argument to the callback
+ * * `component:update:{propertyName}` - Listen any property change, the model is passed as an argument to the callback
+ * * `component:styleUpdate` - Triggered when the style of the component is updated, the model is passed as an argument to the callback
+ * * `component:styleUpdate:{propertyName}` - Listen for a specific style property change, the model is passed as an argument to the callback
+ * * `component:selected` - New component selected, the selected model is passed as an argument to the callback
+ * * `component:deselected` - Component deselected, the deselected model is passed as an argument to the callback
+ * * `component:toggled` - Component selection changed, toggled model is passed as an argument to the callback
+ * * `component:type:add` - New component type added, the new type is passed as an argument to the callback
+ * * `component:type:update` - Component type updated, the updated type is passed as an argument to the callback
+ * ### Blocks
+ * * `block:add` - New block added
+ * * `block:remove` - Block removed
+ * * `block:drag:start` - Started dragging block, model of the block is passed as an argument
+ * * `block:drag` - Dragging block, the block's model and the drag event are passed as arguments
+ * * `block:drag:stop` - Dragging of the block is stopped. As agruments for the callback you get, the dropped component model (if dropped successfully) and the model of the block
+ * ### Assets
+ * * `asset:add` - New asset added
+ * * `asset:remove` - Asset removed
+ * * `asset:upload:start` - Before the upload is started
+ * * `asset:upload:end` - After the upload is ended
+ * * `asset:upload:error` - On any error in upload, passes the error as an argument
+ * * `asset:upload:response` - On upload response, passes the result as an argument
+ * ### Keymaps
+ * * `keymap:add` - New keymap added. The new keyamp object is passed as an argument
+ * * `keymap:remove` - Keymap removed. The removed keyamp object is passed as an argument
+ * * `keymap:emit` - Some keymap emitted, in arguments you get keymapId, shortcutUsed, Event
+ * * `keymap:emit:{keymapId}` - `keymapId` emitted, in arguments you get keymapId, shortcutUsed, Event
+ * ### Style Manager
+ * * `styleManager:update:target` - The target (Component or CSSRule) is changed
+ * * `styleManager:change` - Triggered on style property change from new selected component, the view of the property is passed as an argument to the callback
+ * * `styleManager:change:{propertyName}` - As above but for a specific style property
+ * ### Storages
+ * * `storage:start` - Before the storage request is started
+ * * `storage:start:store` - Before the store request. The object to store is passed as an argumnet (which you can edit)
+ * * `storage:start:load` - Before the load request. Items to load are passed as an argumnet (which you can edit)
+ * * `storage:load` - Triggered when something was loaded from the storage, loaded object passed as an argumnet
+ * * `storage:store` - Triggered when something is stored to the storage, stored object passed as an argumnet
+ * * `storage:end` - After the storage request is ended
+ * * `storage:end:store` - After the store request
+ * * `storage:end:load` - After the load request
+ * * `storage:error` - On any error on storage request, passes the error as an argument
+ * * `storage:error:store` - Error on store request, passes the error as an argument
+ * * `storage:error:load` - Error on load request, passes the error as an argument
+ * ### Canvas
+ * * `canvas:dragenter` - When something is dragged inside the canvas, `DataTransfer` instance passed as an argument
+ * * `canvas:dragover` - When something is dragging on canvas, `DataTransfer` instance passed as an argument
+ * * `canvas:drop` - Something is dropped in canvas, `DataTransfer` instance and the dropped model are passed as arguments
+ * * `canvas:dragend` - When a drag operation is ended, `DataTransfer` instance passed as an argument
+ * * `canvas:dragdata` - On any dataTransfer parse, `DataTransfer` instance and the `result` are passed as arguments.
+ *  By changing `result.content` you're able to customize what is dropped
+ * ### Selectors
+ * * `selector:add` - New selector is add. Passes the new selector as an argument
+ * * `selector:remove` - Selector removed. Passes the removed selector as an argument
+ * * `selector:update` - Selector updated. Passes the updated selector as an argument
+ * * `selector:state` - State changed. Passes the new state value as an argument
+ * ### RTE
+ * * `rte:enable` - RTE enabled. The view, on which RTE is enabled, is passed as an argument
+ * * `rte:disable` - RTE disabled. The view, on which RTE is disabled, is passed as an argument
+ * ### Modal
+ * * `modal:open` - Modal is opened
+ * * `modal:close` - Modal is closed
+ * ### Commands
+ * * `run:{commandName}` - Triggered when some command is called to run (eg. editor.runCommand('preview'))
+ * * `stop:{commandName}` - Triggered when some command is called to stop (eg. editor.stopCommand('preview'))
+ * * `run:{commandName}:before` - Triggered before the command is called
+ * * `stop:{commandName}:before` - Triggered before the command is called to stop
+ * * `abort:{commandName}` - Triggered when the command execution is aborted (`editor.on(`run:preview:before`, opts => opts.abort = 1);`)
+ * * `run` - Triggered on run of any command. The id and the result are passed as arguments to the callback
+ * * `stop` - Triggered on stop of any command. The id and the result are passed as arguments to the callback
+ * ### General
+ * * `canvasScroll` - Canvas is scrolled
+ * * `update` - The structure of the template is updated (its HTML/CSS)
+ * * `undo` - Undo executed
+ * * `redo` - Redo executed
+ * * `load` - Editor is loaded
  *
  * @module Editor
- * @param {Object} config Configurations
- * @param {string} config.container='' Selector for the editor container, eg. '#myEditor'
- * @param {string|Array<Object>} [config.components=''] HTML string or object of components
- * @param {string|Array<Object>} [config.style=''] CSS string or object of rules
- * @param {Boolean} [config.fromElement=false] If true, will fetch HTML and CSS from selected container
- * @param {Boolean} [config.copyPaste=true] Enable/Disable the possibility to copy(ctrl + c) & paste(ctrl + v) components
- * @param {Boolean} [config.undoManager=true] Enable/Disable undo manager
- * @param {Boolean} [config.autorender=true] If true renders editor on init
- * @param {Boolean} [config.noticeOnUnload=true] Enable/Disable alert message before unload the page
- * @param {string} [config.height='900px'] Height for the editor container
- * @param {string} [config.width='100%'] Width for the editor container
- * @param {Object} [config.storage={}] Storage manager configuration, see the relative documentation
- * @param {Object} [config.styleManager={}] Style manager configuration, see the relative documentation
- * @param {Object} [config.commands={}] Commands configuration, see the relative documentation
- * @param {Object} [config.domComponents={}] Components configuration, see the relative documentation
- * @param {Object} [config.panels={}] Panels configuration, see the relative documentation
- * @param {Object} [config.showDevices=true] If true render a select of available devices inside style manager panel
- * @param {string} [config.defaultCommand='select-comp'] Command to execute when no other command is running
- * @param {Array} [config.plugins=[]] Array of plugins to execute on start
- * @param {Object} [config.pluginsOpts={}] Custom options for plugins
- * @example
- * var editor = grapesjs.init({
- *   container : '#gjs',
- *   components: '<div class="txt-red">Hello world!</div>',
- *   style: '.txt-red{color: red}',
- * });
  */
+import $ from 'cash-dom';
+import defaults from './config/config';
+import EditorModel from './model/Editor';
+import EditorView from './view/EditorView';
 
-module.exports = config => {
-  var c = config || {},
-  defaults = require('./config/config'),
-  EditorModel = require('./model/Editor'),
-  EditorView = require('./view/EditorView');
+export default (config = {}) => {
+  const c = {
+    ...defaults,
+    ...config
+  };
 
-  for (var name in defaults) {
-    if (!(name in c))
-      c[name] = defaults[name];
-  }
   c.pStylePrefix = c.stylePrefix;
-
   var em = new EditorModel(c);
-
   var editorView = new EditorView({
-      model: em,
-      config: c,
+    model: em,
+    config: c
   });
 
   return {
+    $,
 
     /**
      * @property {EditorModel}
@@ -102,92 +129,134 @@ module.exports = config => {
     editor: em,
 
     /**
+     * @property {I18n}
+     * @private
+     */
+    I18n: em.get('I18n'),
+
+    /**
      * @property {DomComponents}
+     * @private
      */
     DomComponents: em.get('DomComponents'),
 
     /**
+     * @property {LayerManager}
+     * @private
+     */
+    LayerManager: em.get('LayerManager'),
+
+    /**
      * @property {CssComposer}
+     * @private
      */
     CssComposer: em.get('CssComposer'),
 
     /**
      * @property {StorageManager}
+     * @private
      */
     StorageManager: em.get('StorageManager'),
 
     /**
      * @property {AssetManager}
+     * @private
      */
     AssetManager: em.get('AssetManager'),
 
     /**
      * @property {BlockManager}
+     * @private
      */
     BlockManager: em.get('BlockManager'),
 
     /**
      * @property {TraitManager}
+     * @private
      */
     TraitManager: em.get('TraitManager'),
 
     /**
      * @property {SelectorManager}
+     * @private
      */
     SelectorManager: em.get('SelectorManager'),
 
     /**
      * @property {CodeManager}
+     * @private
      */
     CodeManager: em.get('CodeManager'),
 
     /**
      * @property {Commands}
+     * @private
      */
     Commands: em.get('Commands'),
 
     /**
+     * @property {Keymaps}
+     * @private
+     */
+    Keymaps: em.get('Keymaps'),
+
+    /**
      * @property {Modal}
+     * @private
      */
     Modal: em.get('Modal'),
 
     /**
      * @property {Panels}
+     * @private
      */
     Panels: em.get('Panels'),
 
     /**
      * @property {StyleManager}
+     * @private
      */
     StyleManager: em.get('StyleManager'),
 
     /**
      * @property {Canvas}
+     * @private
      */
     Canvas: em.get('Canvas'),
 
     /**
      * @property {UndoManager}
+     * @private
      */
     UndoManager: em.get('UndoManager'),
 
     /**
      * @property {DeviceManager}
+     * @private
      */
     DeviceManager: em.get('DeviceManager'),
 
     /**
      * @property {RichTextEditor}
+     * @private
      */
-    RichTextEditor: em.get('rte'),
+    RichTextEditor: em.get('RichTextEditor'),
+
+    /**
+     * @property {Parser}
+     * @private
+     */
+    Parser: em.get('Parser'),
 
     /**
      * @property {Utils}
+     * @private
      */
     Utils: em.get('Utils'),
 
     /**
      * @property {Utils}
+     * @private
      */
     Config: em.get('Config'),
 
@@ -203,26 +272,30 @@ module.exports = config => {
 
     /**
      * Returns configuration object
-     * @return {Object}
+     * @param  {string} [prop] Property name
+     * @return {any} Returns the configuration object or
+     *  the value of the specified property
      */
-    getConfig() {
-      return c;
+    getConfig(prop) {
+      return em.getConfig(prop);
     },
 
     /**
      * Returns HTML built inside canvas
      * @return {string} HTML string
      */
-    getHtml() {
-      return em.getHtml();
+    getHtml(opts) {
+      return em.getHtml(opts);
     },
 
     /**
      * Returns CSS built inside canvas
+     * @param {Object} [opts={}] Options
+     * @param {Boolean} [opts.avoidProtected=false] Don't include protected CSS
      * @return {string} CSS string
      */
-    getCss() {
-      return em.getCss();
+    getCss(opts) {
+      return em.getCss(opts);
     },
 
     /**
@@ -234,11 +307,19 @@ module.exports = config => {
     },
 
     /**
-     * Returns components in JSON format object
-     * @return {Object}
+     * Return the complete tree of components. Use `getWrapper` to include also the wrapper
+     * @return {Components}
      */
     getComponents() {
       return em.get('DomComponents').getComponents();
+    },
+
+    /**
+     * Return the wrapper and its all components
+     * @return {Component}
+     */
+    getWrapper() {
+      return em.get('DomComponents').getWrapper();
     },
 
     /**
@@ -266,7 +347,7 @@ module.exports = config => {
      * @param {Boolean} [opts.avoidUpdateStyle=false] If the HTML string contains styles,
      * by default, they will be created and, if already exist, updated. When this option
      * is true, styles already created will not be updated.
-     * @return {Model|Array<Model>}
+     * @return {Array<Component>}
      * @example
      * editor.addComponents('<div class="cls">New component</div>');
      * // or
@@ -277,7 +358,7 @@ module.exports = config => {
      * });
      */
     addComponents(components, opts) {
-      return this.getComponents().add(components, opts);
+      return this.getWrapper().append(components, opts);
     },
 
     /**
@@ -306,7 +387,7 @@ module.exports = config => {
     },
 
     /**
-     * Returns selected component, if there is one
+     * Returns the last selected component, if there is one
      * @return {Model}
      */
     getSelected() {
@@ -314,9 +395,17 @@ module.exports = config => {
     },
 
     /**
-     * Get stylable entity from the selected component.
-     * If you select the component without classes the entity is the Component
-     * itself and all changes will go inside its 'style' property. Otherwise,
+     * Returns an array of all selected components
+     * @return {Array}
+     */
+    getSelectedAll() {
+      return em.getSelectedAll();
+    },
+
+    /**
+     * Get a stylable entity from the selected component.
+     * If you select a component without classes the entity is the Component
+     * itself and all changes will go inside its 'style' attribute. Otherwise,
      * if the selected component has one or more classes, the function will
      * return the corresponding CSS Rule
      * @return {Model}
@@ -330,14 +419,69 @@ module.exports = config => {
     },
 
     /**
+     * Select a component
+     * @param  {Component|HTMLElement} el Component to select
+     * @param  {Object} [opts] Options
+     * @param  {Boolean} [opts.scroll] Scroll canvas to the selected element
+     * @return {this}
+     * @example
+     * // Select dropped block
+     * editor.on('block:drag:stop', function(model) {
+     *  editor.select(model);
+     * });
+     */
+    select(el, opts) {
+      em.setSelected(el, opts);
+      return this;
+    },
+
+    /**
+     * Add component to selection
+     * @param  {Component|HTMLElement|Array} el Component to select
+     * @return {this}
+     * @example
+     * editor.selectAdd(model);
+     */
+    selectAdd(el) {
+      em.addSelected(el);
+      return this;
+    },
+
+    /**
+     * Remove component from selection
+     * @param  {Component|HTMLElement|Array} el Component to select
+     * @return {this}
+     * @example
+     * editor.selectRemove(model);
+     */
+    selectRemove(el) {
+      em.removeSelected(el);
+      return this;
+    },
+
+    /**
+     * Toggle component selection
+     * @param  {Component|HTMLElement|Array} el Component to select
+     * @return {this}
+     * @example
+     * editor.selectToggle(model);
+     */
+    selectToggle(el) {
+      em.toggleSelected(el);
+      return this;
+    },
+
+    /**
      * Set device to the editor. If the device exists it will
      * change the canvas to the proper width
+     * @param {string} name Name of the device
      * @return {this}
      * @example
      * editor.setDevice('Tablet');
      */
     setDevice(name) {
-      return em.set('device', name);
+      em.set('device', name);
+      return this;
     },
 
     /**
@@ -360,15 +504,8 @@ module.exports = config => {
      * @example
      * editor.runCommand('myCommand', {someValue: 1});
      */
-    runCommand(id, options) {
-      var result;
-      var command = em.get('Commands').get(id);
-
-      if(command){
-        result = command.run(this, this, options);
-        this.trigger('run:' + id);
-      }
-      return result;
+    runCommand(id, options = {}) {
+      return em.get('Commands').run(id, options);
     },
 
     /**
@@ -379,15 +516,8 @@ module.exports = config => {
      * @example
      * editor.stopCommand('myCommand', {someValue: 1});
      */
-    stopCommand(id, options) {
-      var result;
-      var command = em.get('Commands').get(id);
-
-      if(command){
-        result = command.stop(this, this, options);
-        this.trigger('stop:' + id);
-      }
-      return result;
+    stopCommand(id, options = {}) {
+      return em.get('Commands').stop(id, options);
     },
 
     /**
@@ -415,6 +545,15 @@ module.exports = config => {
      */
     getContainer() {
       return c.el;
+    },
+
+    /**
+     * Return the count of changes made to the content and not yet stored.
+     * This count resets at any `store()`
+     * @return {number}
+     */
+    getDirtyCount() {
+      return em.getDirtyCount();
     },
 
     /**
@@ -465,13 +604,98 @@ module.exports = config => {
     },
 
     /**
+     * Replace the default CSS parser with a custom one.
+     * The parser function receives a CSS string as a parameter and expects
+     * an array of CSSRule objects as a result. If you need to remove the
+     * custom parser, pass `null` as the argument
+     * @param {Function|null} parser Parser function
+     * @return {this}
+     * @example
+     * editor.setCustomParserCss(css => {
+     *  const result = [];
+     *  // ... parse the CSS string
+     *  result.push({
+     *    selectors: '.someclass, div .otherclass',
+     *    style: { color: 'red' }
+     *  })
+     *  // ...
+     *  return result;
+     * });
+     */
+    setCustomParserCss(parser) {
+      this.Parser.getConfig().parserCss = parser;
+      return this;
+    },
+
+    /**
+     * Change the global drag mode of components.
+     * To get more about this feature read: https://github.com/artf/grapesjs/issues/1936
+     * @param {String} value Drag mode, options: 'absolute' | 'translate'
+     * @returns {this}
+     */
+    setDragMode(value) {
+      em.setDragMode(value);
+      return this;
+    },
+
+    /**
+     * Trigger event log message
+     * @param  {*} msg Message to log
+     * @param  {Object} [opts={}] Custom options
+     * @param  {String} [opts.ns=''] Namespace of the log (eg. to use in plugins)
+     * @param  {String} [opts.level='debug'] Level of the log, `debug`, `info`, `warning`, `error`
+     * @return {this}
+     * @example
+     * editor.log('Something done!', { ns: 'from-plugin-x', level: 'info' });
+     * // This will trigger following events
+     * // `log`, `log:info`, `log-from-plugin-x`, `log-from-plugin-x:info`
+     * // Callbacks of those events will always receive the message and
+     * // options, as arguments, eg:
+     * // editor.on('log:info', (msg, opts) => console.info(msg, opts))
+     */
+    log(msg, opts = {}) {
+      em.log(msg, opts);
+      return this;
+    },
+
+    /**
+     * Translate label
+     * @param {String} key Label to translate
+     * @param {Object} [opts] Options for the translation
+     * @param {Object} [opts.params] Params for the translation
+     * @param {Boolean} [opts.noWarn] Avoid warnings in case of missing resources
+     * @returns {String}
+     * @example
+     * editor.t('msg');
+     * // use params
+     * editor.t('msg2', { params: { test: 'hello' } });
+     * // custom local
+     * editor.t('msg2', { params: { test: 'hello' }, l: 'it' });
+     */
+    t(...args) {
+      return em.t(...args);
+    },
+
+    /**
      * Attach event
      * @param  {string} event Event name
      * @param  {Function} callback Callback function
      * @return {this}
      */
     on(event, callback) {
-      return em.on(event, callback);
+      em.on(event, callback);
+      return this;
+    },
+
+    /**
+     * Attach event and detach it after the first run
+     * @param  {string} event Event name
+     * @param  {Function} callback Callback function
+     * @return {this}
+     */
+    once(event, callback) {
+      em.once(event, callback);
+      return this;
     },
 
     /**
@@ -481,7 +705,8 @@ module.exports = config => {
      * @return {this}
      */
     off(event, callback) {
-      return em.off(event, callback);
+      em.off(event, callback);
+      return this;
     },
 
     /**
@@ -490,7 +715,15 @@ module.exports = config => {
      * @return {this}
      */
     trigger(event) {
-      return em.trigger(event);
+      em.trigger.apply(em, arguments);
+      return this;
+    },
+
+    /**
+     * Destroy the editor
+     */
+    destroy() {
+      return em.destroyAll();
     },
 
     /**
@@ -516,9 +749,17 @@ module.exports = config => {
      * @return {HTMLElement}
      */
     render() {
-      return  editorView.render().el;
-    },
+      // Do post render stuff after the iframe is loaded otherwise it'll
+      // be empty during tests
+      em.on('loaded', () => {
+        this.UndoManager.clear();
+        em.get('modules').forEach(module => {
+          module.postRender && module.postRender(editorView);
+        });
+      });
 
+      editorView.render();
+      return editorView.el;
+    }
   };
-
 };

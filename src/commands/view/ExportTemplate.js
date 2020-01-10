@@ -1,72 +1,58 @@
-module.exports = {
+import Backbone from 'backbone';
+const $ = Backbone.$;
 
-  run(editor, sender) {
-    this.sender = sender;
-    this.wrapper = editor.DomComponents.getWrapper();
-    this.components = editor.DomComponents.getComponents();
-    this.modal = editor.Modal || null;
+export default {
+  run(editor, sender, opts = {}) {
+    sender && sender.set && sender.set('active', 0);
+    const config = editor.getConfig();
+    const modal = editor.Modal;
+    const pfx = config.stylePrefix;
     this.cm = editor.CodeManager || null;
-    this.cssc = editor.CssComposer || null;
-    this.protCss = editor.Config.protectedCss;
-    this.pfx = editor.Config.stylePrefix || '';
-    this.enable();
+
+    if (!this.$editors) {
+      const oHtmlEd = this.buildEditor('htmlmixed', 'hopscotch', 'HTML');
+      const oCsslEd = this.buildEditor('css', 'hopscotch', 'CSS');
+      this.htmlEditor = oHtmlEd.el;
+      this.cssEditor = oCsslEd.el;
+      const $editors = $(`<div class="${pfx}export-dl"></div>`);
+      $editors.append(oHtmlEd.$el).append(oCsslEd.$el);
+      this.$editors = $editors;
+    }
+
+    modal
+      .open({
+        title: config.textViewCode,
+        content: this.$editors
+      })
+      .getModel()
+      .once('change:open', () => editor.stopCommand(this.id));
+    this.htmlEditor.setContent(editor.getHtml());
+    this.cssEditor.setContent(editor.getCss());
   },
 
-  /**
-   * Build editor
-   * @param  {String}  codeName
-   * @param  {String}  theme
-   * @param  {String}  label
-   *
-   * @return  {Object}  Editor
-   * @private
-   * */
+  stop(editor) {
+    const modal = editor.Modal;
+    modal && modal.close();
+  },
+
   buildEditor(codeName, theme, label) {
-    if(!this.codeMirror)
-      this.codeMirror    = this.cm.getViewer('CodeMirror');
+    const input = document.createElement('textarea');
+    !this.codeMirror && (this.codeMirror = this.cm.getViewer('CodeMirror'));
 
-    var $input     = $('<textarea>'),
+    const el = this.codeMirror.clone().set({
+      label,
+      codeName,
+      theme,
+      input
+    });
 
-      editor    = this.codeMirror.clone().set({
-        label,
-        codeName,
-        theme,
-        input    : $input[0],
-      }),
+    const $el = new this.cm.EditorView({
+      model: el,
+      config: this.cm.getConfig()
+    }).render().$el;
 
-      $editor   = new this.cm.EditorView({
-        model    : editor,
-        config    : this.cm.getConfig()
-      }).render().$el;
+    el.init(input);
 
-    editor.init( $input[0] );
-
-    return { el: editor, $el: $editor };
-  },
-
-  enable() {
-    if(!this.$editors){
-      var oHtmlEd      = this.buildEditor('htmlmixed', 'hopscotch', 'HTML'),
-        oCsslEd      = this.buildEditor('css', 'hopscotch', 'CSS');
-      this.htmlEditor    = oHtmlEd.el;
-      this.cssEditor    = oCsslEd.el;
-      this.$editors  = $('<div>', {class: this.pfx + 'export-dl'});
-      this.$editors.append(oHtmlEd.$el).append(oCsslEd.$el);
-    }
-
-    if(this.modal){
-      this.modal.setTitle('Export template');
-      this.modal.setContent(this.$editors);
-      this.modal.open();
-    }
-    var addCss = this.protCss || '';
-    //this.htmlEditor.setContent(this.cm.getCode(this.components, 'html', this.cssc));
-    this.htmlEditor.setContent(this.em.getHtml());
-    this.cssEditor.setContent(addCss + this.cm.getCode(this.wrapper, 'css', this.cssc));
-
-    if(this.sender)
-      this.sender.set('active',false);
-  },
-
-  stop() {}
+    return { el, $el };
+  }
 };

@@ -1,10 +1,8 @@
-const StorageManager = require('storage_manager');
-const Models = require('./model/Models');
+import StorageManager from 'storage_manager';
+import Models from './model/Models';
 
 describe('Storage Manager', () => {
-
   describe('Main', () => {
-
     var obj;
 
     beforeEach(() => {
@@ -15,63 +13,54 @@ describe('Storage Manager', () => {
       obj = null;
     });
 
-    it('Object exists', () => {
-      expect(StorageManager).toExist();
+    test('Object exists', () => {
+      expect(StorageManager).toBeTruthy();
     });
 
-    it('Autosave is active by default', () => {
+    test('Autosave is active by default', () => {
       expect(obj.isAutosave()).toEqual(true);
     });
 
-    it('Change autosave', () => {
+    test('Change autosave', () => {
       obj.setAutosave(0);
       expect(obj.isAutosave()).toEqual(false);
     });
 
-    it('Steps before save are set as default', () => {
+    test('Steps before save are set as default', () => {
       expect(obj.getStepsBeforeSave()).toEqual(1);
     });
 
-    it('Change steps before save', () => {
+    test('Change steps before save', () => {
       obj.setStepsBeforeSave(5);
       expect(obj.getStepsBeforeSave()).toEqual(5);
     });
 
-    it('No storages inside', () => {
-      expect(obj.getStorages()).toEqual({});
-    });
-
-    it('Add and get new storage', () => {
+    test('Add and get new storage', () => {
       obj.add('test', 'gen');
       expect(obj.get('test')).toEqual('gen');
     });
 
-    it('LocalStorage is set as default', () => {
+    test('LocalStorage is set as default', () => {
       expect(obj.getCurrent()).toEqual('local');
     });
 
-    it('Change storage type', () => {
+    test('Change storage type', () => {
       obj.setCurrent('remote');
       expect(obj.getCurrent()).toEqual('remote');
     });
 
-    it('Store do not execute if empty', () => {
-      expect(obj.store({item:'test'})).toEqual(null);
+    test('Store do not execute if empty', () => {
+      expect(obj.store({ item: 'test' })).toBeUndefined();
     });
 
-    it('Load do not execute if empty', () => {
-      expect(obj.load(['item'])).toEqual({});
-    });
-
-    it('Load default storages ', () => {
+    test('Load default storages ', () => {
       obj.loadDefaultProviders();
-      expect(obj.get('local')).toExist();
-      expect(obj.get('remote')).toExist();
-      expect(obj.get('test')).toNotExist();
+      expect(obj.get('local')).toBeTruthy();
+      expect(obj.get('remote')).toBeTruthy();
+      expect(obj.get('test')).toBeFalsy();
     });
 
     describe('With custom storage', () => {
-
       var storeValue;
       var storageId = 'testStorage';
       var storage = {
@@ -80,13 +69,13 @@ describe('Storage Manager', () => {
         },
         load(keys) {
           return storeValue;
-        },
+        }
       };
 
       beforeEach(() => {
         storeValue = [];
         obj = new StorageManager().init({
-          type: storageId,
+          type: storageId
         });
         obj.add(storageId, storage);
       });
@@ -95,10 +84,10 @@ describe('Storage Manager', () => {
         obj = null;
       });
 
-      it('Store and load data', () => {
+      test('Store and load data', () => {
         var data = {
           item: 'testData',
-          item2: 'testData2',
+          item2: 'testData2'
         };
         var data2 = {};
         var id = obj.getConfig().id;
@@ -106,15 +95,11 @@ describe('Storage Manager', () => {
         data2[id + 'item2'] = 'testData2';
 
         obj.store(data);
-        var load = obj.load(['item', 'item2']);
-        expect(storeValue).toEqual(data2);
-        expect(load).toEqual(data);
+        obj.load(['item', 'item2'], res => {
+          expect(storeValue).toEqual(data2);
+          expect(res).toEqual(data);
+        });
       });
-
     });
-
   });
-
-  Models.run();
-
 });

@@ -1,21 +1,48 @@
-module.exports = {
+export default {
+  run(editor, sender, opts = {}) {
+    const modal = editor.Modal;
+    const am = editor.AssetManager;
+    const config = am.getConfig();
+    const amContainer = am.getContainer();
+    const title = opts.modalTitle || editor.t('assetManager.modalTitle') || '';
+    const types = opts.types;
+    const accept = opts.accept;
 
-  run(editor, sender, opts) {
-    var opt = opts || {};
-    var config = editor.getConfig();
-    var modal = editor.Modal;
-    var assetManager = editor.AssetManager;
+    am.setTarget(opts.target);
+    am.onClick(opts.onClick);
+    am.onDblClick(opts.onDblClick);
+    am.onSelect(opts.onSelect);
 
-    assetManager.onClick(opt.onClick);
-    assetManager.onDblClick(opt.onDblClick);
+    if (!this.rendered || types) {
+      let assets = am.getAll().filter(i => 1);
 
-    // old API
-    assetManager.setTarget(opt.target);
-    assetManager.onSelect(opt.onSelect);
+      if (types && types.length) {
+        assets = assets.filter(a => types.indexOf(a.get('type')) !== -1);
+      }
 
-    modal.setTitle(opt.modalTitle || 'Select image');
-    modal.setContent(assetManager.render());
-    modal.open();
+      am.render(assets);
+      this.rendered = 1;
+    }
+
+    if (accept) {
+      const uploadEl = amContainer.querySelector(
+        `input#${config.stylePrefix}uploadFile`
+      );
+      uploadEl && uploadEl.setAttribute('accept', accept);
+    }
+
+    modal
+      .open({
+        title,
+        content: amContainer
+      })
+      .getModel()
+      .once('change:open', () => editor.stopCommand(this.id));
+    return this;
   },
 
+  stop(editor) {
+    editor.Modal.close();
+    return this;
+  }
 };

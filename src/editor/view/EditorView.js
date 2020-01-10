@@ -1,54 +1,39 @@
-var Backbone = require('backbone');
+import Backbone from 'backbone';
+import { appendStyles } from 'utils/mixins';
 
-module.exports = Backbone.View.extend({
+const $ = Backbone.$;
 
+export default Backbone.View.extend({
   initialize() {
-    this.pn = this.model.get('Panels');
-    this.conf = this.model.config;
-    this.className = this.conf.stylePrefix + 'editor';
-    this.model.on('loaded', function(){
+    const { model } = this;
+    model.view = this;
+    this.conf = model.config;
+    this.pn = model.get('Panels');
+    model.on('loaded', () => {
       this.pn.active();
-      this.model.runDefault();
-      this.model.trigger('load');
-    }, this);
+      this.pn.disableButtons();
+      model.runDefault();
+      setTimeout(() => model.trigger('load', model.get('Editor')));
+    });
   },
 
   render() {
-    var model = this.model;
-    var um = model.get('UndoManager');
-    var dComps = model.get('DomComponents');
-    var config = model.get('Config');
+    const { model, $el, conf } = this;
+    const pfx = conf.stylePrefix;
+    const contEl = $(conf.el || `body ${conf.container}`);
+    appendStyles(conf.cssIcons, { unique: 1, prepand: 1 });
+    $el.empty();
 
-    if(config.loadCompsOnRender) {
-      if (config.clearOnRender) {
-        dComps.clear();
-      }
-      dComps.getComponents().reset(config.components);
-      model.loadOnStart();
-      um.clear();
-      // This will init loaded components
-      dComps.onLoad();
-    }
+    if (conf.width) contEl.css('width', conf.width);
+    if (conf.height) contEl.css('height', conf.height);
 
-    var conf = this.conf;
-    var contEl = $(conf.el || ('body ' + conf.container));
-    this.$el.empty();
-
-    if(conf.width)
-      contEl.css('width', conf.width);
-
-    if(conf.height)
-      contEl.css('height', conf.height);
-
-    // Canvas
-    this.$el.append(model.get('Canvas').render());
-
-    // Panels
-    this.$el.append(this.pn.render());
-    this.$el.attr('class', this.className);
-
-    contEl.addClass(conf.stylePrefix + 'editor-cont');
-    contEl.html(this.$el);
+    $el.append(model.get('Canvas').render());
+    $el.append(this.pn.render());
+    $el.attr('class', `${pfx}editor ${pfx}one-bg ${pfx}two-color`);
+    contEl
+      .addClass(`${pfx}editor-cont`)
+      .empty()
+      .append($el);
 
     return this;
   }

@@ -1,55 +1,37 @@
-const ComponentImageView = require('dom_components/view/ComponentImageView');
-const Component = require('dom_components/model/Component');
+import ComponentImageView from 'dom_components/view/ComponentImageView';
+import Component from 'dom_components/model/ComponentImage';
 
-module.exports = {
-  run() {
+describe('ComponentImageView', () => {
+  var model;
+  var view;
 
-      describe('ComponentImageView', () => {
-
-        var $fixtures;
-        var $fixture;
-        var model;
-        var view;
-
-        before(() => {
-          $fixtures = $("#fixtures");
-          $fixture = $('<div class="components-fixture"></div>');
-        });
-
-        beforeEach(() => {
-          model = new Component();
-          view = new ComponentImageView({
-            model
-          });
-          $fixture.empty().appendTo($fixtures);
-          $fixture.html(view.render().el);
-        });
-
-        afterEach(() => {
-          view.remove();
-        });
-
-        after(() => {
-          $fixture.remove();
-        });
-
-        it('Component empty', () => {
-          expect(view.el.getAttribute('onmousedown')).toEqual('return false');
-          expect(view.el.getAttribute('class')).toEqual(view.classEmpty);
-        });
-
-        it('TagName is <img>', () => {
-          expect(view.el.tagName).toEqual('IMG');
-        });
-
-        it('Update src attribute', () => {
-          model.set('src', './');
-          expect(view.el.getAttribute('src')).toEqual('./');
-        });
-
-        it('Renders correctly', () => {
-          expect(view.render()).toExist();
-        });
+  beforeEach(() => {
+    model = new Component();
+    view = new ComponentImageView({
+      model
     });
-  }
-};
+    document.body.innerHTML = '<div id="fixtures"></div>';
+    document.body.querySelector('#fixtures').appendChild(view.render().el);
+  });
+
+  afterEach(() => {
+    view.remove();
+  });
+
+  test('Component empty', () => {
+    expect(view.el.getAttribute('class')).toEqual(view.classEmpty);
+  });
+
+  test('TagName is <img>', () => {
+    expect(view.el.tagName).toEqual('IMG');
+  });
+
+  test('Update src attribute', () => {
+    model.set('src', './');
+    expect(view.el.getAttribute('src')).toEqual('./');
+  });
+
+  test('Renders correctly', () => {
+    expect(view.render()).toBeTruthy();
+  });
+});

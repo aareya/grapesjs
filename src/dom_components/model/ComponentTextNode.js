@@ -1,27 +1,33 @@
-var Component = require('./Component');
+import Component from './Component';
 
-module.exports = Component.extend({
+export default Component.extend(
+  {
+    defaults: {
+      ...Component.prototype.defaults,
+      droppable: false,
+      layerable: false,
+      editable: true
+    },
 
-  defaults: _.extend({}, Component.prototype.defaults, {
-    droppable: false,
-    editable: true,
-  }),
-
-  toHTML() {
-    return this.get('content');
-  },
-
-}, {
-
-  isComponent(el) {
-    var result = '';
-    if(el.nodeType === 3){
-      result = {
-        type: 'textnode',
-        content: el.textContent
-      };
+    toHTML() {
+      return this.get('content')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
-    return result;
   },
-
-});
+  {
+    isComponent(el) {
+      var result = '';
+      if (el.nodeType === 3) {
+        result = {
+          type: 'textnode',
+          content: el.textContent
+        };
+      }
+      return result;
+    }
+  }
+);

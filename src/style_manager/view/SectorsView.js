@@ -1,21 +1,34 @@
-var Backbone = require('backbone');
-var SectorView = require('./SectorView');
+import Backbone from 'backbone';
+import { extend, isString, isArray } from 'underscore';
+import { isTaggableNode } from 'utils/mixins';
+import { appendAtIndex } from 'utils/dom';
+import SectorView from './SectorView';
 
-module.exports = Backbone.View.extend({
+const helperCls = 'hc-state';
 
-  initialize(o) {
-    this.config = o.config || {};
-    this.pfx = this.config.stylePrefix || '';
+export default Backbone.View.extend({
+  initialize(o = {}) {
+    const config = o.config || {};
+    this.pfx = config.stylePrefix || '';
+    this.ppfx = config.pStylePrefix || '';
     this.target = o.target || {};
+    this.config = config;
 
-    // The taget that will emit events for properties
-    this.propTarget   = {};
-    _.extend(this.propTarget, Backbone.Events);
-    this.listenTo( this.collection, 'add', this.addTo);
-    this.listenTo( this.collection, 'reset', this.render);
-    this.listenTo( this.target, 'change:selectedComponent targetClassAdded targetClassRemoved targetClassUpdated ' +
-      'targetStateUpdated targetStyleUpdated change:device', this.targetUpdated);
-
+    // The target that will emit events for properties
+    const target = {};
+    extend(target, Backbone.Events);
+    const body = document.body;
+    const dummy = document.createElement(`el-${new Date().getTime()}`);
+    body.appendChild(dummy);
+    target.computedDefault = { ...window.getComputedStyle(dummy) };
+    body.removeChild(dummy);
+    this.propTarget = target;
+    const coll = this.collection;
+    const events =
+      'component:toggled component:update:classes change:state change:device';
+    this.listenTo(coll, 'add', this.addTo);
+    this.listenTo(coll, 'reset', this.render);
+    this.listenTo(this.target, events, this.targetUpdated);
   },
 
   /**
@@ -24,81 +37,121 @@ module.exports = Backbone.View.extend({
    * @return {Object}
    * @private
    * */
-  addTo(model) {
-    this.addToCollection(model);
+  addTo(model, coll, opts = {}) {
+    this.addToCollection(model, null, opts);
+  },
+
+  toggleStateCls(targets = [], enable) {
+    targets.forEach(trg => {
+      const el = trg.getEl();
+      el && el.classList[enable ? 'add' : 'remove'](helperCls);
+    });
   },
 
   /**
    * Fired when target is updated
    * @private
    */
-  targetUpdated() {
-    var em = this.target;
-    var el = em.get('selectedComponent');
+  targetUpdated(trg) {
+    const em = this.target;
+    const pt = this.propTarget;
+    const targets = em.getSelectedAll();
+    let model = em.getSelected();
+    const mdToClear = trg && !!trg.toHTML ? trg : model;
 
-    if(!el)
-      return;
+    // Clean components
+    mdToClear && this.toggleStateCls([mdToClear]);
+    if (!model) return;
 
     const config = em.get('Config');
-    var previewMode = config.devicePreviewMode;
-    var classes = el.get('classes');
-    var pt = this.propTarget;
-    var device = em.getDeviceModel();
-    var state = !previewMode ? el.get('state') : '';
-    var widthMedia = device && device.get('widthMedia');
-    var mediaText = device && !previewMode && widthMedia ?
-      `(${config.mediaCondition}: ${widthMedia})` : '';
-    var stateStr = state ? `:${state}` : null;
-    var view = el.view;
+    const state = !config.devicePreviewMode ? em.get('state') : '';
+    const { componentFirst } = em.get('SelectorManager').getConfig();
+    const el = model.getEl();
     pt.helper = null;
+    pt.targets = null;
 
-    if (view) {
-      pt.computed = window.getComputedStyle(view.el, stateStr);
+    // Create computed style container
+    if (el && isTaggableNode(el)) {
+      const stateStr = state ? `:${state}` : null;
+      pt.computed = window.getComputedStyle(el, stateStr);
     }
 
-    if(classes.length){
-      var cssC = em.get('CssComposer');
-      var valid = _.filter(classes.models, item => item.get('active'));
-      var iContainer = cssC.get(valid, state, mediaText);
+    // Create a new rule for the state as a helper
+    const appendStateRule = (style = {}) => {
+      const cc = em.get('CssComposer');
+      const rules = cc.getAll();
+      let helperRule = cc.getClassRule(helperCls);
 
-      if(!iContainer){
-        iContainer = cssC.add(valid, state, mediaText);
-        // Get styles from the component
-        iContainer.set('style', el.get('style'));
-        //cssC.addRule(iContainer);
-        el.set('style', {});
-      }else{
-        // Ensure to clean element
-        //if(classes.length == 1)
-          //el.set('style', {});
+      if (!helperRule) {
+        helperRule = cc.setClassRule(helperCls);
+      } else {
+        // I will make it last again, otherwise it could be overridden
+        rules.remove(helperRule);
+        rules.add(helperRule);
       }
 
-      // If the state is not empty, there should be a helper rule in play
-      // The helper rule will get the same style of the iContainer
-      if(state){
-        var clm = em.get('SelectorManager');
-        var helperClass = clm.add('hc-state');
-        var helperRule = cssC.get([helperClass]);
-        if(!helperRule)
-          helperRule = cssC.add([helperClass]);
-        else{
-          // I will make it last again, otherwise it could be overridden
-          cssC.getAll().remove(helperRule);
-          cssC.getAll().add(helperRule);
-        }
-        helperRule.set('style', iContainer.get('style'));
-        pt.helper = helperRule;
-      }
+      helperRule.set('important', 1);
+      helperRule.setStyle(style);
+      pt.helper = helperRule;
+    };
 
-      pt.model = iContainer;
-      pt.trigger('update');
-      return;
+    model = em.get('StyleManager').getModelToStyle(model);
+
+    if (state) {
+      appendStateRule(model.getStyle());
+      this.toggleStateCls(targets, 1);
     }
 
-    pt.model = el;
+    pt.model = model;
+    if (componentFirst) pt.targets = targets;
     pt.trigger('update');
   },
 
+  /**
+   * Select different target for the Style Manager.
+   * It could be a Component, CSSRule, or a string of any CSS selector
+   * @param {Component|CSSRule|String|Array<Component|CSSRule|String>} target
+   * @return {Array<Styleable>} Array of Components/CSSRules
+   */
+  setTarget(target, opts = {}) {
+    const em = this.target;
+    const trgs = isArray(target) ? target : [target];
+    const { targetIsClass, stylable } = opts;
+    const models = [];
+
+    trgs.forEach(target => {
+      let model = target;
+
+      if (isString(target)) {
+        let rule;
+        const rules = em.get('CssComposer').getAll();
+
+        if (targetIsClass) {
+          rule = rules.filter(
+            rule => rule.get('selectors').getFullString() === target
+          )[0];
+        }
+
+        if (!rule) {
+          rule = rules.filter(rule => rule.get('selectorsAdd') === target)[0];
+        }
+
+        if (!rule) {
+          rule = rules.add({ selectors: [], selectorsAdd: target });
+        }
+
+        stylable && rule.set({ stylable });
+        model = rule;
+      }
+
+      models.push(model);
+    });
+
+    const pt = this.propTarget;
+    pt.targets = models;
+    pt.trigger('update');
+    return models;
+  },
 
   /**
    * Add new object to collection
@@ -107,40 +160,32 @@ module.exports = Backbone.View.extend({
    * @return {Object} Object created
    * @private
    * */
-  addToCollection(model, fragmentEl) {
-    var fragment = fragmentEl || null;
-    var viewObject = SectorView;
-
-    var view = new viewObject({
+  addToCollection(model, fragmentEl, opts = {}) {
+    const { pfx, target, propTarget, config, el } = this;
+    const appendTo = fragmentEl || el;
+    const rendered = new SectorView({
       model,
-      id: this.pfx + model.get('name').replace(' ','_').toLowerCase(),
+      id: `${pfx}${model.get('id')}`,
       name: model.get('name'),
       properties: model.get('properties'),
-      target: this.target,
-      propTarget: this.propTarget,
-      config: this.config,
-    });
-    var rendered = view.render().el;
-
-    if(fragment){
-      fragment.appendChild(rendered);
-    }else{
-      this.$el.append(rendered);
-    }
+      target,
+      propTarget,
+      config
+    }).render().el;
+    appendAtIndex(appendTo, rendered, opts.at);
 
     return rendered;
   },
 
   render() {
-    var fragment = document.createDocumentFragment();
-    this.$el.empty();
-
-    this.collection.each(function(model){
-      this.addToCollection(model, fragment);
-    }, this);
-
-    this.$el.attr('id', this.pfx + 'sectors');
-    this.$el.append(fragment);
+    const frag = document.createDocumentFragment();
+    const $el = this.$el;
+    const pfx = this.pfx;
+    const ppfx = this.ppfx;
+    $el.empty();
+    this.collection.each(model => this.addToCollection(model, frag));
+    $el.append(frag);
+    $el.addClass(`${pfx}sectors ${ppfx}one-bg ${ppfx}two-color`);
     return this;
   }
 });

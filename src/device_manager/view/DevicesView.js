@@ -1,8 +1,8 @@
-var Backbone = require('backbone');
+import { template } from 'underscore';
+import Backbone from 'backbone';
 
-module.exports = Backbone.View.extend({
-
-  template: _.template(`
+export default Backbone.View.extend({
+  template: template(`
     <div class="<%= ppfx %>device-label"><%= deviceLabel %></div>
     <div class="<%= ppfx %>field <%= ppfx %>select">
       <span id="<%= ppfx %>input-holder">
@@ -15,7 +15,7 @@ module.exports = Backbone.View.extend({
     <button style="display:none" class="<%= ppfx %>add-trasp">+</button>`),
 
   events: {
-    'change': 'updateDevice'
+    change: 'updateDevice'
   },
 
   initialize(o) {
@@ -40,7 +40,7 @@ module.exports = Backbone.View.extend({
    */
   updateDevice() {
     var em = this.em;
-    if(em){
+    if (em) {
       var devEl = this.devicesEl;
       var val = devEl ? devEl.val() : '';
       em.set('device', val);
@@ -54,7 +54,7 @@ module.exports = Backbone.View.extend({
   updateSelect() {
     var em = this.em;
     var devEl = this.devicesEl;
-    if(em && em.getDeviceModel && devEl){
+    if (em && em.getDeviceModel && devEl) {
       var device = em.getDeviceModel();
       var name = device ? device.get('name') : '';
       devEl.val(name);
@@ -67,24 +67,29 @@ module.exports = Backbone.View.extend({
    * @private
    */
   getOptions() {
-    var result = '';
-    this.collection.each(device => {
-      var name = device.get('name');
-      result += '<option value="' + name+ '">' + name + '</option>';
+    const { collection, em } = this;
+    let result = '';
+
+    collection.each(device => {
+      const { name, id } = device.attributes;
+      const label = (em && em.t && em.t(`deviceManager.devices.${id}`)) || name;
+      result += `<option value="${name}">${label}</option>`;
     });
+
     return result;
   },
 
   render() {
-    var pfx = this.ppfx;
-    this.$el.html(this.template({
-      ppfx: pfx,
-      deviceLabel: this.config.deviceLabel
-    }));
-    this.devicesEl = this.$el.find('.' + pfx + 'devices');
+    const { em, ppfx, $el, el } = this;
+    $el.html(
+      this.template({
+        ppfx,
+        deviceLabel: em && em.t && em.t('deviceManager.device')
+      })
+    );
+    this.devicesEl = $el.find(`.${ppfx}devices`);
     this.devicesEl.append(this.getOptions());
-    this.el.className = pfx + 'devices-c';
+    el.className = `${ppfx}devices-c`;
     return this;
-  },
-
+  }
 });

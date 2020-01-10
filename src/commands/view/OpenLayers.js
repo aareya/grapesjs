@@ -1,34 +1,27 @@
-var Layers = require('navigator');
+import Backbone from 'backbone';
+import Layers from 'navigator';
 
-module.exports = {
+const $ = Backbone.$;
 
-  run(em, sender) {
-    if(!this.$layers) {
-      var collection = em.DomComponents.getComponent().get('components'),
-      config = em.getConfig(),
-      panels = em.Panels,
-      lyStylePfx = config.layers.stylePrefix || 'nv-';
+export default {
+  run(editor) {
+    const lm = editor.LayerManager;
+    const pn = editor.Panels;
 
-      config.layers.stylePrefix = config.stylePrefix + lyStylePfx;
-      config.layers.pStylePrefix = config.stylePrefix;
-      config.layers.em 	= em.editor;
-      config.layers.opened = em.editor.get('opened');
-      var layers = new Layers(collection, config.layers);
-      this.$layers = layers.render();
-
-      // Check if panel exists otherwise crate it
-      if(!panels.getPanel('views-container'))
-        this.panel = panels.addPanel({id: 'views-container'});
-      else
-        this.panel = panels.getPanel('views-container');
-
-      this.panel.set('appendContent', this.$layers).trigger('change:appendContent');
+    if (!this.layers) {
+      const id = 'views-container';
+      const layers = document.createElement('div');
+      const panels = pn.getPanel(id) || pn.addPanel({ id });
+      layers.appendChild(lm.render());
+      panels.set('appendContent', layers).trigger('change:appendContent');
+      this.layers = layers;
     }
-    this.$layers.show();
+
+    this.layers.style.display = 'block';
   },
 
   stop() {
-    if(this.$layers)
-      this.$layers.hide();
+    const layers = this.layers;
+    layers && (layers.style.display = 'none');
   }
 };

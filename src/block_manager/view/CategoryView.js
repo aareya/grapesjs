@@ -1,8 +1,8 @@
-var Backbone = require('backbone');
+import { template } from 'underscore';
+import Backbone from 'backbone';
 
-module.exports = Backbone.View.extend({
-
-  template: _.template(`
+export default Backbone.View.extend({
+  template: template(`
   <div class="<%= pfx %>title">
     <i class="<%= pfx %>caret-icon"></i>
     <%= label %>
@@ -14,23 +14,22 @@ module.exports = Backbone.View.extend({
 
   initialize(o = {}, config = {}) {
     this.config = config;
-    const pfx = this.config.pStylePrefix || '';
+    const pfx = config.pStylePrefix || '';
+    this.em = config.em;
     this.pfx = pfx;
     this.caretR = 'fa fa-caret-right';
     this.caretD = 'fa fa-caret-down';
     this.iconClass = `${pfx}caret-icon`;
     this.activeClass = `${pfx}open`;
     this.className = `${pfx}block-category`;
-    this.events[`click .${pfx}title`]  = 'toggle';
+    this.events[`click .${pfx}title`] = 'toggle';
     this.listenTo(this.model, 'change:open', this.updateVisibility);
     this.delegateEvents();
   },
 
   updateVisibility() {
-    if(this.model.get('open'))
-      this.open();
-    else
-      this.close();
+    if (this.model.get('open')) this.open();
+    else this.close();
   },
 
   open() {
@@ -71,12 +70,17 @@ module.exports = Backbone.View.extend({
   },
 
   render() {
-    this.el.innerHTML = this.template({
+    const { em, el, $el, model } = this;
+    const label =
+      em.t(`blockManager.categories.${model.id}`) || model.get('label');
+    el.innerHTML = this.template({
       pfx: this.pfx,
-      label: this.model.get('label'),
+      label
     });
-    this.el.className = this.className;
+    el.className = this.className;
+    $el.css({ order: model.get('order') });
     this.updateVisibility();
+
     return this;
-  },
+  }
 });

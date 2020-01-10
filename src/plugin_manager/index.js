@@ -1,23 +1,21 @@
-module.exports = config => {
+import defaults from './config/config';
 
-  var c = config || {},
-  defaults = require('./config/config');
+export default config => {
+  var c = config || {};
 
   // Set default options
   for (var name in defaults) {
-    if (!(name in c))
-      c[name] = defaults[name];
+    if (!(name in c)) c[name] = defaults[name];
   }
 
   var plugins = {};
 
   return {
-
     /**
      * Add new plugin. Plugins could not be overwritten
      * @param {string} id Plugin ID
      * @param {Function} plugin Function which contains all plugin logic
-     * @return {this}
+     * @return {Function} The plugin function
      * @example
      * PluginManager.add('some-plugin', function(editor){
      *   editor.Commands.add('new-command', {
@@ -28,10 +26,12 @@ module.exports = config => {
      * });
      */
     add(id, plugin) {
-      if(plugins[id])
-        return this;
+      if (plugins[id]) {
+        return plugins[id];
+      }
+
       plugins[id] = plugin;
-      return this;
+      return plugin;
     },
 
     /**
@@ -53,6 +53,5 @@ module.exports = config => {
     getAll() {
       return plugins;
     }
-
   };
 };
